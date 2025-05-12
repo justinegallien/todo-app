@@ -1,6 +1,6 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import React, { useState, useEffect } from "react";
-import { createTodo, scanTodos } from "./dynamo";
+import { createTodo, deleteToDo, scanTodos, toggleCompleted } from "./dynamo";
 
 export default function App() {
   const [input, setInput] = useState();
@@ -12,6 +12,21 @@ export default function App() {
   useEffect(() => {
     scanTodos().then(setTodos);
   }, []);
+
+  async function handleDelete(id) {
+    await deleteToDo(id);
+    setTodos((prev) => prev.filter((item) => item.id != id));
+  }
+
+  async function handleToggle(todo) {
+    const flipped = !todo.completed;
+    toggleCompleted(todo.id, flipped);
+    setTodos((prev) =>
+      prev.map((item) =>
+        item.id === todo.id ? { ...item, completed: flipped } : item
+      )
+    );
+  }
 
   const handleAdd = async () => {
     if (!text.trim()) return;
@@ -36,7 +51,21 @@ export default function App() {
 
       <ul style={{ marginTop: 16 }}>
         {todos.map((t) => (
-          <li key={t.id}>{t.text}</li>
+          <div key={t.id}>
+            <input
+              onChange={() => handleToggle(t)}
+              checked={t.completed}
+              type="checkbox"
+              name="done"
+              id="done"
+            />
+            <li
+              style={{ textDecoration: t.completed ? "line-through" : "none" }}
+            >
+              {t.text}
+            </li>
+            <button onClick={() => handleDelete(t.id)}>Remove</button>
+          </div>
         ))}
       </ul>
     </div>

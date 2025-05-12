@@ -3,6 +3,8 @@ import {
   DynamoDBDocumentClient,
   ScanCommand,
   PutCommand,
+  DeleteCommand,
+  UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
 
 const client = new DynamoDBClient({
@@ -21,6 +23,24 @@ export async function scanTodos() {
   return Items || [];
 }
 
-export async function createTodo(item) {
-  await docClient.send(new PutCommand({ TableName: "todo_app", Item: item }));
+export async function createTodo(todo) {
+  await docClient.send(new PutCommand({ TableName: "todo_app", Item: todo }));
+}
+
+export async function deleteToDo(id) {
+  await docClient.send(
+    new DeleteCommand({ TableName: "todo_app", Key: { id } })
+  );
+}
+
+export async function toggleCompleted(id, completed) {
+  await docClient.send(
+    new UpdateCommand({
+      TableName: "todo_app",
+      Key: { id },
+      UpdateExpression: "SET #done = :val",
+      ExpressionAttributeNames: { "#done": "completed" },
+      ExpressionAttributeValues: { ":val": completed },
+    })
+  );
 }
